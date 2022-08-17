@@ -1,7 +1,12 @@
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.Set" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%
 String basePath = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort() + request.getContextPath() + "/";
+
+Map<String,String> possibilityMap = (Map<String,String>)application.getAttribute("possibilityMap");
+Set<String> set = possibilityMap.keySet();
 %>
 <!DOCTYPE html>
 <html>
@@ -16,8 +21,41 @@ String basePath = request.getScheme() + "://" + request.getServerName() + ":" + 
 <script type="text/javascript" src="jquery/bootstrap_3.3.0/js/bootstrap.min.js"></script>
 <script type="text/javascript" src="jquery/bootstrap-datetimepicker-master/js/bootstrap-datetimepicker.js"></script>
 <script type="text/javascript" src="jquery/bootstrap-datetimepicker-master/locale/bootstrap-datetimepicker.zh-CN.js"></script>
+<script type="text/javascript" src="jquery/bs_typeahead/bootstrap3-typeahead.min.js"></script>
+
 <script type="text/javascript">
+	var json = {
+		<%
+		for (String key : set){
+			String value = possibilityMap.get(key);
+		%>
+			"<%=key%>":<%=value%>,
+
+		<%
+    }
+		%>
+
+	};
+
+
+
+
 	$(function () {
+		$("#create-accountName").typeahead({
+			source: function (query, process) {
+				$.get(
+						"workbench/transaction/getaccountName.do",
+						{ "name" : query },
+						function (data) {
+							//alert(data);
+							process(data);
+						},
+						"json"
+				);
+			},
+			delay: 1000
+		});
+
 		$(".time1").datetimepicker({
 			minView: "month",
 			language:  'zh-CN',
@@ -60,7 +98,7 @@ String basePath = request.getScheme() + "://" + request.getServerName() + ":" + 
 						$.each(data,function (i,n) {
 							html += '<tr>';
 							html += '<td><input type="radio" value="'+n.id+'" name="activity"/></td>';
-							html += '<td>'+n.name+'</td>';
+							html += '<td id="'+n.id+'">'+n.name+'</td>';
 							html += '<td>'+n.startDate+'</td>';
 							html += '<td>'+n.endDate+'</td>';
 							html += '<td>'+n.owner+'</td>';
@@ -97,8 +135,8 @@ String basePath = request.getScheme() + "://" + request.getServerName() + ":" + 
 						var html = "";
 						$.each(data,function (i,n) {
 							html += '<tr>';
-							html += '<td><input type="radio" id="n.id" name="activity"/></td>';
-							html += '<td>'+n.fullname+'</td>';
+							html += '<td><input type="radio" name="contacts" value="'+n.id+'"/></td>';
+							html += '<td id="'+n.id+'">'+n.fullname+'</td>';
 							html += '<td>'+n.email+'</td>';
 							html += '<td>'+n.mphone+'</td>';
 							html += '</tr>';
@@ -111,9 +149,38 @@ String basePath = request.getScheme() + "://" + request.getServerName() + ":" + 
 
 		})
 
+
+
+		$("#activityOkBtn").click(function () {
+
+			var id = $("input[name=activity]:checked").val();
+			var name = $("#"+id).html();
+			$("#create-activitySrc").val(name);
+			$("#create-activityId").val(id);
+			$("#findMarketActivity").modal("hide");
+		})
+		$("#contactsOkBtn").click(function () {
+
+			var id = $("input[name=contacts]:checked").val();
+			var name = $("#"+id).html();
+			$("#create-contactsName").val(name);
+			$("#create-contactsId").val(id);
+			$("#findMarketActivity").modal("hide");
+			$("#findContacts").modal("hide");
+		})
+
+		$("#create-transactionStage").change(function () {
+			var stage = $("#create-transactionStage").val();
+			var possibility = json[stage];
+			$("#create-possibility").val(possibility);
+		})
+
 		$("#saveBtn").click(function () {
 
+			$("#form").submit();
 		})
+
+
 	})
 </script>
 </head>
@@ -166,6 +233,10 @@ String basePath = request.getScheme() + "://" + request.getServerName() + ":" + 
 						</tbody>
 					</table>
 				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+					<button type="button" class="btn btn-primary" id="activityOkBtn">确定</button>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -214,6 +285,10 @@ String basePath = request.getScheme() + "://" + request.getServerName() + ":" + 
 						</tbody>
 					</table>
 				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+					<button type="button" class="btn btn-primary" id="contactsOkBtn">确定</button>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -227,7 +302,7 @@ String basePath = request.getScheme() + "://" + request.getServerName() + ":" + 
 		</div>
 		<hr style="position: relative; top: -40px;">
 	</div>
-	<form class="form-horizontal" role="form" style="position: relative; top: -30px;" action="workbench/transaction/save.do" method="post">
+	<form class="form-horizontal" role="form" style="position: relative; top: -30px;" action="workbench/transaction/save.do" method="post" id="form">
 		<div class="form-group">
 			<label for="create-transactionOwner" class="col-sm-2 control-label">所有者<span style="font-size: 15px; color: red;">*</span></label>
 			<div class="col-sm-10" style="width: 300px;">
@@ -257,7 +332,7 @@ String basePath = request.getScheme() + "://" + request.getServerName() + ":" + 
 		<div class="form-group">
 			<label for="create-accountName" class="col-sm-2 control-label">客户名称<span style="font-size: 15px; color: red;">*</span></label>
 			<div class="col-sm-10" style="width: 300px;">
-				<input type="text" class="form-control" id="create-accountName" name="create-contactsId" placeholder="支持自动补全，输入客户不存在则新建">
+				<input type="text" class="form-control" id="create-accountName" name="create-customerName" placeholder="支持自动补全，输入客户不存在则新建">
 			</div>
 			<label for="create-transactionStage" class="col-sm-2 control-label">阶段<span style="font-size: 15px; color: red;">*</span></label>
 			<div class="col-sm-10" style="width: 300px;">
@@ -298,14 +373,16 @@ String basePath = request.getScheme() + "://" + request.getServerName() + ":" + 
 			</div>
 			<label for="create-activitySrc" class="col-sm-2 control-label">市场活动源&nbsp;&nbsp;<a href="javascript:void(0);" id="activtyBtn"><span class="glyphicon glyphicon-search"></span></a></label>
 			<div class="col-sm-10" style="width: 300px;">
-				<input type="text" class="form-control" id="create-activitySrc" name="create-activityId">
+				<input type="text" class="form-control" id="create-activitySrc">
+				<input type="hidden" id="create-activityId"  name="create-activityId">
 			</div>
 		</div>
 		
 		<div class="form-group">
 			<label for="create-contactsName" class="col-sm-2 control-label">联系人名称&nbsp;&nbsp;<a href="javascript:void(0);" id="contactsBtn"><span class="glyphicon glyphicon-search"></span></a></label>
 			<div class="col-sm-10" style="width: 300px;">
-				<input type="text" class="form-control" id="create-contactsName" name="create-contactsId">
+				<input type="text" class="form-control" id="create-contactsName" >
+				<input type="hidden" id="create-contactsId" name="create-contactsId">
 			</div>
 		</div>
 		

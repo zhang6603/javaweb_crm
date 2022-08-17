@@ -9,8 +9,7 @@ import com.bjpowernode.crm.workbench.service.impl.ClueServiceImpl;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class SysInitListener implements ServletContextListener {
 
@@ -30,5 +29,17 @@ public class SysInitListener implements ServletContextListener {
             application.setAttribute(s,map.get(s));
         }
         System.out.println("服务器缓存处理数据字典结束");
+
+
+        System.out.println("服务器缓存处理可能性开始");
+        Map<String,String> map1 = new HashMap<String, String>();
+        ResourceBundle rs = ResourceBundle.getBundle("Stage2Possibility");
+        Enumeration<String> e = rs.getKeys();
+        while (e.hasMoreElements()){
+            String key = e.nextElement();
+            String value = rs.getString(key);
+            map1.put(key,value);
+        }
+        application.setAttribute("possibilityMap",map1);
     }
 }

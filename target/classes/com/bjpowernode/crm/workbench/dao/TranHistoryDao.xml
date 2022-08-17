@@ -24,6 +24,12 @@
         #{tranId}
         )
     </insert>
+
+        <select id="getById" resultType="tranhistory">
+                select * from tbl_tran_history where tranId = #{id};
+
+
+        </select>
 </mapper>
 
 
